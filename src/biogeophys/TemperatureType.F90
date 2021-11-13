@@ -818,6 +818,8 @@ contains
             this%t_ref2m_patch(p) = 289.46
          else
             this%t_ref2m_patch(p) = 283._r8
+            this%t_ref2m_24_patch(p) = 273.15_r8
+            this%t_mean_5yr_patch(p) = 273.15_r8
          end if
 
          if (lun%urbpoi(l)) then
@@ -1025,6 +1027,7 @@ contains
            dim1name='pft', &
            long_name='5 year average of min yearly 2-m temperature for hardening', units='K', &
            interpinic_flag='interp', readvar=readvar, data=this%t_mean_5yr_patch)
+
       call restartvar(ncid=ncid, flag=flag, varname='T_HARD1', xtype=ncd_double,  &
            dim1name='pft', &
            long_name='min year 2-m temperature for hardening', units='K', &
@@ -1183,6 +1186,7 @@ contains
       call init_accum_field (name='T_REF24', units='K', &    
          desc='24 hour average of 2-m temperature', accum_type='timeavg', accum_period=-1, &
          subgrid_type='pft', numlev=1, init_value=0.0_r8)
+
       this%t_mean_5yr_patch(bounds%begp:bounds%endp) = spval
       call init_accum_field (name='T_HARD5', units='K', &    
            desc='5 year average of yearly min 2-m temperature for hardening', accum_type='runmean', accum_period=-5, &
