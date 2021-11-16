@@ -85,7 +85,8 @@ module TemperatureType
      ! accumulator without affecting the other).
      !
      real(r8), pointer :: t_ref2m_24_patch        (:)   ! patch daily average 2 m height surface air temperature (K) ! Marius
-     real(r8), pointer :: t_mean_5yr_patch        (:)   ! patch 5 year mean of minimum yearly 2 m height surface air temperature (K) ! 
+     real(r8), pointer :: t_mean_5yr_patch        (:)   ! patch 5 year mean of minimum yearly 2 m height surface air temperature (K) 
+     !real(r8), pointer :: t_mean_5yr_inst_patch   (:,:) ! 
      real(r8), pointer :: t_min_yr_patch          (:)   ! 
      real(r8), pointer :: t_min_yr_inst_patch     (:)   ! marius
      real(r8), pointer :: t_veg24_patch           (:)   ! patch 24hr average vegetation temperature (K)
@@ -257,6 +258,7 @@ contains
     allocate(this%t_ref2m_24_patch         (begp:endp))                      ; this%t_ref2m_24_patch         (:)   = nan !Marius
     allocate(this%t_min_yr_patch           (begp:endp))                      ; this%t_min_yr_patch           (:)   = nan 
     allocate(this%t_min_yr_inst_patch      (begp:endp))                      ; this%t_min_yr_inst_patch      (:)   = nan 
+    !allocate(this%t_mean_5yr_inst_patch    (1:5,begp:endp))                    ; this%t_mean_5yr_inst_patch  (1:5,:) = nan
     allocate(this%t_mean_5yr_patch         (begp:endp))                      ; this%t_mean_5yr_patch         (:)   = nan !Marius 
     allocate(this%t_veg24_patch            (begp:endp))                      ; this%t_veg24_patch            (:)   = nan
     allocate(this%t_veg240_patch           (begp:endp))                      ; this%t_veg240_patch           (:)   = nan
@@ -580,13 +582,13 @@ contains
            avgflag='A', long_name='average temperature 2m (24hrs)', &
            ptr_patch=this%t_ref2m_24_patch, default='active')
       this%t_mean_5yr_patch(begp:endp)  = spval 
-      call hist_addfld1d (fname='T_HARD5', units='K',  &
-           avgflag='A', long_name='5 year mean of minimum yearly 2-m temperature for hardening', &
-           ptr_patch=this%t_mean_5yr_patch, default='active')
-      this%t_min_yr_patch(begp:endp)  = spval 
-      call hist_addfld1d (fname='T_HARD1', units='K',  &
-           avgflag='A', long_name='minimum year 2-m temperature for hardening', &
-           ptr_patch=this%t_min_yr_patch, default='active')
+      !call hist_addfld1d (fname='T_HARD5', units='K',  &
+      !     avgflag='A', long_name='5 year mean of minimum yearly 2-m temperature for hardening', &
+      !     ptr_patch=this%t_mean_5yr_patch, default='active')
+      !this%t_min_yr_patch(begp:endp)  = spval 
+      !call hist_addfld1d (fname='T_HARD1', units='K',  &
+      !     avgflag='A', long_name='minimum year 2-m temperature for hardening', &
+      !     ptr_patch=this%t_min_yr_patch, default='active')
     end if
 
     this%t_veg24_patch(begp:endp) = spval
@@ -1023,15 +1025,15 @@ contains
          interpinic_flag='interp', readvar=readvar, data=this%dynbal_baseline_heat_col)
 
     if (use_fates_hardening) then !marius
-      call restartvar(ncid=ncid, flag=flag, varname='T_HARD5', xtype=ncd_double,  &
-           dim1name='pft', &
-           long_name='5 year average of min yearly 2-m temperature for hardening', units='K', &
-           interpinic_flag='interp', readvar=readvar, data=this%t_mean_5yr_patch)
+      !call restartvar(ncid=ncid, flag=flag, varname='T_HARD5', xtype=ncd_double,  &
+      !     dim1name='pft', &
+      !     long_name='5 year average of min yearly 2-m temperature for hardening', units='K', &
+      !     interpinic_flag='interp', readvar=readvar, data=this%t_mean_5yr_patch)
 
-      call restartvar(ncid=ncid, flag=flag, varname='T_HARD1', xtype=ncd_double,  &
-           dim1name='pft', &
-           long_name='min year 2-m temperature for hardening', units='K', &
-           interpinic_flag='interp', readvar=readvar, data=this%t_min_yr_patch)
+      !call restartvar(ncid=ncid, flag=flag, varname='T_HARD5I', xtype=ncd_double,  &
+      !     dim1name='pft', &
+      !     long_name='5 year instanteneous hardening', units='K', &
+      !     interpinic_flag='interp', readvar=readvar, data=this%t_mean_5yr_inst_patch)
     end if 
 
     if (use_crop) then
@@ -1299,6 +1301,8 @@ contains
       if (nsrest == nsrStartup) then
          this%t_min_yr_patch(begp:endp)        =  spval
          this%t_min_yr_inst_patch(begp:endp)   =  spval
+         !this%t_mean_5yr_patch(begp:endp)      =  spval
+         !this%t_mean_5yr_inst_patch(5,begp:endp) =  spval
       end if
     end if
 
@@ -1407,21 +1411,26 @@ contains
     !----------------------------------------------------------------------------marius
     if (use_fates_hardening) then
       ! Accumulate and extract T_REF24 
-      call update_accum_field  ('T_REF24' , this%t_ref2m_patch , nstep)
-      call extract_accum_field ('T_REF24' , rbufslp , nstep)
       do p = begp,endp
-        this%t_ref2m_24_patch(p) = rbufslp(p)
+         rbufslp(p) = this%t_ref2m_patch(p)
       end do
+      call update_accum_field  ('T_REF24' , rbufslp , nstep)
+      call extract_accum_field ('T_REF24' , this%t_ref2m_24_patch , nstep)
       ! Start 1 year minimum temperature loop for hardening
       end_yr = is_end_curr_year()
       do p = begp,endp   
         if (rbufslp(p) /= spval) then           
-           this%t_min_yr_inst_patch(p) = min(rbufslp(p), this%t_min_yr_inst_patch(p))
+           this%t_min_yr_inst_patch(p) = min(this%t_ref2m_24_patch(p), this%t_min_yr_inst_patch(p))
         endif
         if (end_yr) then
            this%t_min_yr_patch(p) = this%t_min_yr_inst_patch(p)
            rbufslp(p)=this%t_min_yr_inst_patch(p)
            this%t_min_yr_inst_patch(p) = spval
+           !do l=2,5
+           !   this%t_mean_5yr_inst_patch(l-1,p)=this%t_mean_5yr_inst_patch(l,p)
+           !end do
+           !this%t_mean_5yr_inst_patch(5,p)=this%t_min_yr_patch(p)
+           !this%t_mean_5yr_patch(p)=sum(this%t_mean_5yr_inst_patch(:,p))/max(1,size(this%t_mean_5yr_inst_patch(:,p))) 
         else if (secs == dtime) then
            this%t_min_yr_patch(p) = spval
         endif
