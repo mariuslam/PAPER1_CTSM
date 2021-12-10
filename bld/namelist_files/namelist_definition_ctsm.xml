@@ -673,10 +673,16 @@ Toggle to turn on the logging module (only relevant if FATES is being used).
   (use_fates_planthydro=".true." is EXPERIMENTAL NOT SUPPORTED! Nor is it Tested!)
 </entry>
 
-<entry id="use_fates_hardening" type="logical" category="physics"
+<entry id="use_fates_hydrohard" type="logical" category="physics"
        group="clm_inparm" valid_values="" value=".false.">
-  Toggle to turn on plant hardening (only relevant if FATES is on).
-  (use_fates_hardening=".true." is EXPERIMENTAL NOT SUPPORTED! Nor is it Tested!)
+  Toggle to turn on plant hydrohard (only relevant if FATES is on).
+  (use_fates_hydrohard=".true." is EXPERIMENTAL NOT SUPPORTED! Nor is it Tested!)
+</entry>
+
+<entry id="use_fates_frosthard" type="logical" category="physics"
+       group="clm_inparm" valid_values="" value=".false.">
+  Toggle to turn on plant frosthard (only relevant if FATES is on).
+  (use_fates_frosthard=".true." is EXPERIMENTAL NOT SUPPORTED! Nor is it Tested!)
 </entry>
 
 
